@@ -153,6 +153,11 @@ const api: ElectronAPI = {
     workspace?: { name: string; iconUrl?: string; mcpUrl?: string }
     credential?: string
     mcpCredentials?: { accessToken: string; clientId?: string }
+    providerConfig?: {
+      provider: string
+      baseURL: string
+      apiFormat: 'anthropic' | 'openai'
+    }
   }) => ipcRenderer.invoke(IPC_CHANNELS.ONBOARDING_SAVE_CONFIG, config),
   // Claude OAuth
   getExistingClaudeToken: () => ipcRenderer.invoke(IPC_CHANNELS.ONBOARDING_GET_EXISTING_CLAUDE_TOKEN),

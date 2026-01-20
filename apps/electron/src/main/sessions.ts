@@ -11,6 +11,7 @@ import {
   getWorkspaces,
   getWorkspaceByNameOrId,
   loadConfigDefaults,
+  getProviderConfig,
   type Workspace,
 } from '@craft-agent/shared/config'
 import { loadWorkspaceConfig } from '@craft-agent/shared/workspaces'
@@ -490,16 +491,26 @@ export class SessionManager {
 
       sessionLog.info('Reinitializing auth with billing type:', billing.type)
 
+      // Clear all auth-related env vars first
+      delete process.env.ANTHROPIC_API_KEY
+      delete process.env.CLAUDE_CODE_OAUTH_TOKEN
+      delete process.env.ANTHROPIC_BASE_URL
+
       if (billing.type === 'oauth_token' && billing.claudeOAuthToken) {
         // Use Claude Max subscription via OAuth token
         process.env.CLAUDE_CODE_OAUTH_TOKEN = billing.claudeOAuthToken
-        delete process.env.ANTHROPIC_API_KEY
         sessionLog.info('Set Claude Max OAuth Token')
       } else if (billing.apiKey) {
-        // Use API key (pay-as-you-go)
+        // Use API key (pay-as-you-go or third-party provider)
         process.env.ANTHROPIC_API_KEY = billing.apiKey
-        delete process.env.CLAUDE_CODE_OAUTH_TOKEN
         sessionLog.info('Set Anthropic API Key')
+
+        // Check for third-party provider config (MiniMax, GLM, DeepSeek, etc.)
+        const providerConfig = getProviderConfig()
+        if (providerConfig?.baseURL) {
+          process.env.ANTHROPIC_BASE_URL = providerConfig.baseURL
+          sessionLog.info('Set custom API base URL for provider:', providerConfig.provider, providerConfig.baseURL)
+        }
       } else {
         sessionLog.error('No authentication configured!')
       }

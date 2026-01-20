@@ -717,6 +717,11 @@ export interface ElectronAPI {
     workspace?: { name: string; iconUrl?: string; mcpUrl?: string }  // Optional - if not provided, only updates billing
     credential?: string  // API key or OAuth token based on authType
     mcpCredentials?: { accessToken: string; clientId?: string }  // MCP OAuth credentials
+    providerConfig?: {  // Provider-specific configuration (for third-party APIs)
+      provider: string  // 'minimax' | 'glm' | 'deepseek' | 'custom'
+      baseURL: string
+      apiFormat: 'anthropic' | 'openai'
+    }
   }): Promise<OnboardingSaveResult>
   // Claude OAuth
   getExistingClaudeToken(): Promise<string | null>

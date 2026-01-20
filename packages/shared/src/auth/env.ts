@@ -15,8 +15,16 @@ export interface ClaudeMaxCredentials {
   oauthToken: string;
 }
 
+/**
+ * Configuration for third-party AI providers that are Anthropic API compatible.
+ */
+export interface ProviderEnvironment {
+  baseURL?: string;   // Custom API base URL (e.g., MiniMax, GLM, DeepSeek)
+  apiFormat?: 'anthropic' | 'openai';  // API format (for future OpenAI-compatible providers)
+}
+
 export type AuthCredentials =
-  | { type: 'api_key'; credentials: ApiKeyCredentials }
+  | { type: 'api_key'; credentials: ApiKeyCredentials; provider?: ProviderEnvironment }
   | { type: 'oauth_token'; credentials: ClaudeMaxCredentials };
 
 /**
@@ -29,12 +37,15 @@ export type AuthCredentials =
  */
 export function setAuthEnvironment(auth: AuthCredentials): void {
   // Clear all auth-related env vars first
-  delete process.env.ANTHROPIC_API_KEY;
-  delete process.env.CLAUDE_CODE_OAUTH_TOKEN;
+  clearAuthEnvironment();
 
   switch (auth.type) {
     case 'api_key':
       process.env.ANTHROPIC_API_KEY = auth.credentials.apiKey;
+      // Set custom base URL for third-party providers (MiniMax, GLM, DeepSeek, etc.)
+      if (auth.provider?.baseURL) {
+        process.env.ANTHROPIC_BASE_URL = auth.provider.baseURL;
+      }
       break;
 
     case 'oauth_token':
@@ -49,4 +60,5 @@ export function setAuthEnvironment(auth: AuthCredentials): void {
 export function clearAuthEnvironment(): void {
   delete process.env.ANTHROPIC_API_KEY;
   delete process.env.CLAUDE_CODE_OAUTH_TOKEN;
+  delete process.env.ANTHROPIC_BASE_URL;
 }
