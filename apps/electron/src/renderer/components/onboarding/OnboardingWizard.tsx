@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 import { WelcomeStep } from "./WelcomeStep"
 import { BillingMethodStep, type BillingMethod } from "./BillingMethodStep"
-import { CredentialsStep, type CredentialStatus } from "./CredentialsStep"
+import { CredentialsStep, type CredentialStatus, type ProviderCredentials } from "./CredentialsStep"
 import { CompletionStep } from "./CompletionStep"
 
 export type OnboardingStep =
@@ -31,6 +31,7 @@ interface OnboardingWizardProps {
   onBack: () => void
   onSelectBillingMethod: (method: BillingMethod) => void
   onSubmitCredential: (credential: string) => void
+  onSubmitProvider?: (credentials: ProviderCredentials) => void
   onStartOAuth?: () => void
   onFinish: () => void
 
@@ -61,6 +62,7 @@ export function OnboardingWizard({
   onBack,
   onSelectBillingMethod,
   onSubmitCredential,
+  onSubmitProvider,
   onStartOAuth,
   onFinish,
   existingClaudeToken,
@@ -99,6 +101,7 @@ export function OnboardingWizard({
             status={state.credentialStatus}
             errorMessage={state.errorMessage}
             onSubmit={onSubmitCredential}
+            onSubmitProvider={onSubmitProvider}
             onStartOAuth={onStartOAuth}
             onBack={onBack}
             existingClaudeToken={existingClaudeToken}
