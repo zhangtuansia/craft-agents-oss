@@ -15,6 +15,7 @@ import type {
   LoginStatus,
   CredentialStatus,
   BillingMethod,
+  ProviderCredentials,
 } from '@/components/onboarding'
 import type { AuthType, SetupNeeds } from '../../shared/types'
 
@@ -38,6 +39,7 @@ interface UseOnboardingReturn {
 
   // Credentials
   handleSubmitCredential: (credential: string) => void
+  handleSubmitProvider: (credentials: ProviderCredentials) => void
   handleStartOAuth: () => void
 
   // Claude OAuth
@@ -62,6 +64,13 @@ function billingMethodToAuthType(method: BillingMethod): AuthType {
   switch (method) {
     case 'api_key': return 'api_key'
     case 'claude_oauth': return 'oauth_token'
+    case 'minimax':
+    case 'glm':
+    case 'deepseek':
+    case 'custom':
+      return 'api_key' // Provider APIs use api_key auth type
+    default:
+      return 'api_key'
   }
 }
 
@@ -185,6 +194,62 @@ export function useOnboarding({
       }))
     }
   }, [handleSaveConfig])
+
+  // Submit provider credentials (API key + baseURL + format)
+  const handleSubmitProvider = useCallback(async (credentials: ProviderCredentials) => {
+    setState(s => ({ ...s, credentialStatus: 'validating', errorMessage: undefined }))
+
+    try {
+      if (!credentials.apiKey.trim()) {
+        setState(s => ({
+          ...s,
+          credentialStatus: 'error',
+          errorMessage: 'Please enter a valid API key',
+        }))
+        return
+      }
+
+      if (!credentials.baseURL.trim()) {
+        setState(s => ({
+          ...s,
+          credentialStatus: 'error',
+          errorMessage: 'Please enter a valid API Base URL',
+        }))
+        return
+      }
+
+      // Save provider config with extended info
+      const result = await window.electronAPI.saveOnboardingConfig({
+        authType: billingMethodToAuthType(state.billingMethod!),
+        credential: credentials.apiKey,
+        providerConfig: {
+          provider: state.billingMethod!,
+          baseURL: credentials.baseURL,
+          apiFormat: credentials.apiFormat,
+        },
+      })
+
+      if (result.success) {
+        setState(s => ({
+          ...s,
+          credentialStatus: 'success',
+          step: 'complete',
+        }))
+      } else {
+        setState(s => ({
+          ...s,
+          credentialStatus: 'error',
+          errorMessage: result.error || 'Failed to save configuration',
+        }))
+      }
+    } catch (error) {
+      setState(s => ({
+        ...s,
+        credentialStatus: 'error',
+        errorMessage: error instanceof Error ? error.message : 'Validation failed',
+      }))
+    }
+  }, [state.billingMethod])
 
   // Claude OAuth state
   const [existingClaudeToken, setExistingClaudeToken] = useState<string | null>(null)
@@ -347,6 +412,7 @@ export function useOnboarding({
     handleBack,
     handleSelectBillingMethod,
     handleSubmitCredential,
+    handleSubmitProvider,
     handleStartOAuth,
     existingClaudeToken,
     isClaudeCliInstalled,

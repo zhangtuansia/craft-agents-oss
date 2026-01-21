@@ -7,7 +7,7 @@ import { ipcMain } from 'electron'
 import { mainLog } from './logger'
 import { getAuthState, getSetupNeeds } from '@craft-agent/shared/auth'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
-import { saveConfig, loadStoredConfig, generateWorkspaceId, type AuthType, type StoredConfig } from '@craft-agent/shared/config'
+import { saveConfig, loadStoredConfig, generateWorkspaceId, type AuthType, type StoredConfig, type ProviderConfig } from '@craft-agent/shared/config'
 import { getDefaultWorkspacesDir } from '@craft-agent/shared/workspaces'
 import { CraftOAuth, getMcpBaseUrl } from '@craft-agent/shared/auth'
 import { validateMcpConnection } from '@craft-agent/shared/mcp'
@@ -83,6 +83,11 @@ export function registerOnboardingHandlers(sessionManager: SessionManager): void
     workspace?: { name: string; iconUrl?: string; mcpUrl?: string }  // Optional - if not provided, only updates billing
     credential?: string
     mcpCredentials?: { accessToken: string; clientId?: string }
+    providerConfig?: {  // Provider-specific configuration
+      provider: string
+      baseURL: string
+      apiFormat: 'anthropic' | 'openai'
+    }
   }): Promise<OnboardingSaveResult> => {
     mainLog.info('[Onboarding:Main] ONBOARDING_SAVE_CONFIG received', {
       authType: config.authType,
@@ -92,6 +97,8 @@ export function registerOnboardingHandlers(sessionManager: SessionManager): void
       hasCredential: !!config.credential,
       credentialLength: config.credential?.length,
       hasMcpCredentials: !!config.mcpCredentials,
+      hasProviderConfig: !!config.providerConfig,
+      provider: config.providerConfig?.provider,
     })
 
     try {
@@ -144,6 +151,19 @@ export function registerOnboardingHandlers(sessionManager: SessionManager): void
       if (config.authType) {
         mainLog.info('[Onboarding:Main] Updating authType from', newConfig.authType, 'to', config.authType)
         newConfig.authType = config.authType
+      }
+
+      // 3b. Save provider config if provided (for third-party AI APIs)
+      if (config.providerConfig) {
+        mainLog.info('[Onboarding:Main] Saving provider config:', config.providerConfig.provider)
+        newConfig.providerConfig = {
+          provider: config.providerConfig.provider,
+          baseURL: config.providerConfig.baseURL,
+          apiFormat: config.providerConfig.apiFormat,
+        }
+      } else if (config.authType === 'api_key' && !config.providerConfig) {
+        // Clear provider config when switching back to standard Anthropic API
+        delete newConfig.providerConfig
       }
 
       // 4. Create workspace only if workspace info is provided

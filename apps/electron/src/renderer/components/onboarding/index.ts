@@ -12,7 +12,7 @@ export {
 // Individual steps
 export { WelcomeStep } from './WelcomeStep'
 export { BillingMethodStep, type BillingMethod } from './BillingMethodStep'
-export { CredentialsStep, type CredentialStatus } from './CredentialsStep'
+export { CredentialsStep, type CredentialStatus, type ProviderCredentials, type ApiFormat, PROVIDER_DEFAULTS } from './CredentialsStep'
 export { CompletionStep } from './CompletionStep'
 export { ReauthScreen } from './ReauthScreen'
 

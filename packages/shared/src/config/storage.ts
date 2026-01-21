@@ -40,6 +40,15 @@ export interface PendingUpdate {
   sha256: string;
 }
 
+/**
+ * Provider configuration for third-party AI APIs
+ */
+export interface ProviderConfig {
+  provider: string;  // Provider ID: 'minimax' | 'glm' | 'deepseek' | 'custom'
+  baseURL: string;   // API base URL
+  apiFormat: 'anthropic' | 'openai';  // API format to use
+}
+
 // Config stored in JSON file (credentials stored in encrypted file, not here)
 export interface StoredConfig {
   authType?: AuthType;
@@ -47,6 +56,8 @@ export interface StoredConfig {
   activeWorkspaceId: string | null;
   activeSessionId: string | null;  // Currently active session (primary scope)
   model?: string;
+  // Provider configuration (for third-party AI APIs)
+  providerConfig?: ProviderConfig;
   // Notifications
   notificationsEnabled?: boolean;  // Desktop notifications for task completion (default: true)
   // Appearance
@@ -225,6 +236,30 @@ export function setModel(model: string): void {
   const config = loadStoredConfig();
   if (!config) return;
   config.model = model;
+  saveConfig(config);
+}
+
+/**
+ * Get the provider configuration for third-party AI APIs.
+ * Returns null if using default Anthropic API.
+ */
+export function getProviderConfig(): ProviderConfig | null {
+  const config = loadStoredConfig();
+  return config?.providerConfig ?? null;
+}
+
+/**
+ * Set the provider configuration for third-party AI APIs.
+ * Pass null to clear and use default Anthropic API.
+ */
+export function setProviderConfig(providerConfig: ProviderConfig | null): void {
+  const config = loadStoredConfig();
+  if (!config) return;
+  if (providerConfig) {
+    config.providerConfig = providerConfig;
+  } else {
+    delete config.providerConfig;
+  }
   saveConfig(config);
 }
 
